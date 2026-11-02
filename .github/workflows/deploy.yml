@@ -1,0 +1,41 @@
+name: Build and Push Front Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/jonathanc31/prueba-tecnica-front
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 3. Iniciar sesión en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 4. Construir y publicar imagen ultraligera
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:v-${{ github.run_number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
